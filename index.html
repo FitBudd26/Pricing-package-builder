@@ -563,7 +563,7 @@
     function SegmentedControl({ options, value, onChange, error, shaking }) {
       return (
         <div>
-          <div style={{ display:'grid', gridTemplateColumns:`repeat(${options.length},1fr)`, border:'1.5px solid #E2E5EA', borderRadius:8, overflow:'hidden', background:'#F7F8FA' }} className={shaking ? 'fbb-shake' : ''}>
+          <div style={{ display:'grid', gridTemplateColumns:`repeat(${options.length},1fr)`, border:'1.5px solid #E2E5EA', borderRadius:8, overflow:'hidden', background:'#fff' }} className={shaking ? 'fbb-shake' : ''}>
             {options.map((opt, i) => {
               const sel = value === opt.id;
               return (
@@ -632,9 +632,9 @@
     function NumberStepper({ value, onChange, min = 5, max = 100 }) {
       return (
         <div style={{ display:'flex', alignItems:'center', border:'1.5px solid #E2E5EA', borderRadius:8, overflow:'hidden', width:'fit-content' }}>
-          <button type="button" onClick={() => onChange(Math.max(min, value - 1))} style={{ width:36, height:36, background:'#F7F8FA', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'#4A5568' }}><Minus size={14} /></button>
+          <button type="button" onClick={() => onChange(Math.max(min, value - 1))} style={{ width:36, height:36, background:'#fff', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'#4A5568' }}><Minus size={14} /></button>
           <span style={{ padding:'0 14px', fontSize:14, fontWeight:600, color:'#1A1D23', minWidth:44, textAlign:'center', lineHeight:'36px' }}>{value}</span>
-          <button type="button" onClick={() => onChange(Math.min(max, value + 1))} style={{ width:36, height:36, background:'#F7F8FA', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'#4A5568' }}><Plus size={14} /></button>
+          <button type="button" onClick={() => onChange(Math.min(max, value + 1))} style={{ width:36, height:36, background:'#fff', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'#4A5568' }}><Plus size={14} /></button>
         </div>
       );
     }
@@ -863,7 +863,7 @@
           <div ref={formTopRef} />
 
           {/* Section 1: Coaching Profile */}
-          <div style={{ background:'#F9FAFB', border:'1px solid #E8EBF2', borderRadius:9, padding:'9px 10px 11px', marginBottom:4 }}>
+          <div style={{ borderBottom:'1px solid #EEF0F4', paddingBottom:12, marginBottom:8 }}>
             <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:8 }}>
               <span style={{ fontSize:15 }}>🎯</span>
               <span style={{ fontSize:13, fontWeight:700, color:'#1A1D23' }}>Coaching Profile</span>
@@ -876,7 +876,7 @@
             </div>
 
             {/* Niche + Experience — shared border, no gap */}
-            <div style={{ display:'flex', border:`1.5px solid ${(errors.niche || errors.experienceLevel) ? '#E53E3E' : '#E2E5EA'}`, borderRadius:8, overflow:'hidden' }} className="fbb-profile-combo">
+            <div style={{ display:'flex', border:`1px solid ${(errors.niche || errors.experienceLevel) ? '#E53E3E' : '#E2E5EA'}`, borderRadius:8, overflow:'hidden', background:'#fff' }} className="fbb-profile-combo">
               <div style={{ flex:'1 1 0', borderRight:'1.5px solid #E2E5EA', padding:'9px 10px' }}>
                 <div style={{ fontSize:10, fontWeight:700, color:'#718096', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:5 }}>Fitness niche</div>
                 <select value={formData.niche} onChange={e => update('niche', e.target.value)}
@@ -888,7 +888,7 @@
               </div>
               <div style={{ flex:'0 0 auto', minWidth:164, padding:'9px 10px' }}>
                 <div style={{ fontSize:10, fontWeight:700, color:'#718096', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:5 }}>Experience</div>
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', borderRadius:6, overflow:'hidden', background:'#F7F8FA', border:'1px solid #EAEAEA' }}>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', borderRadius:6, overflow:'hidden', background:'#fff', border:'1px solid #E2E5EA' }}>
                   {EXPERIENCE_LEVELS.map((opt, i) => {
                     const sel = formData.experienceLevel === opt.id;
                     return (
@@ -905,7 +905,7 @@
           </div>
 
           {/* Section 2: Services */}
-          <div style={{ background:'#F9FAFB', border:'1px solid #E8EBF2', borderRadius:9, padding:'9px 10px 11px', marginBottom:4 }}>
+          <div style={{ borderBottom:'1px solid #EEF0F4', paddingBottom:12, marginBottom:8 }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6 }}>
               <div style={{ display:'flex', alignItems:'center', gap:7 }}>
                 <span style={{ fontSize:15 }}>📋</span>
@@ -921,7 +921,7 @@
           </div>
 
           {/* Section 3: Goals */}
-          <div style={{ background:'#F9FAFB', border:'1px solid #E8EBF2', borderRadius:9, padding:'9px 10px 11px', marginBottom:4 }}>
+          <div style={{ borderBottom:'1px solid #EEF0F4', paddingBottom:12, marginBottom:8 }}>
             <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:8 }}>
               <span style={{ fontSize:15 }}>💰</span>
               <span style={{ fontSize:13, fontWeight:700, color:'#1A1D23' }}>Program & Revenue Goals</span>
