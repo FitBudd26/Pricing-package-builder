@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FitBudd — Pricing & Package Builder</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 28px 16px 80px;
+    }
+    #root { width: 100%; max-width: 720px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    /* ─── Inline SVG icons ─── */
+    const _ico = (paths, displayName) => {
+      const C = ({ size = 16, color, style, className, fill }) => (
+        <svg width={size} height={size} viewBox="0 0 24 24"
+          fill={fill || 'none'} stroke={color || 'currentColor'}
+          strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
+          style={style} className={className}
+          dangerouslySetInnerHTML={{ __html: paths }} />
+      );
+      C.displayName = displayName;
+      return C;
+    };
+    const Check       = _ico('<polyline points="20 6 9 17 4 12"/>', 'Check');
+    const Plus        = _ico('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>', 'Plus');
+    const Minus       = _ico('<line x1="5" y1="12" x2="19" y2="12"/>', 'Minus');
+    const AlertCircle = _ico('<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>', 'AlertCircle');
+    const RefreshCw   = _ico('<polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>', 'RefreshCw');
+    const TrendingUp  = _ico('<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>', 'TrendingUp');
+    const Users       = _ico('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>', 'Users');
+    const DollarSign  = _ico('<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>', 'DollarSign');
+    const ArrowRight  = _ico('<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>', 'ArrowRight');
+    const Star        = _ico('<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>', 'Star');
+    const Zap         = _ico('<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>', 'Zap');
+    const Lock        = _ico('<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>', 'Lock');
+    const ChevronDown = _ico('<polyline points="6 9 12 15 18 9"/>', 'ChevronDown');
+
+    /* ════════════════════════════════════════════
+       GLOBAL STYLES
+    ════════════════════════════════════════════ */
+    const GLOBAL_STYLES = `
+      @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
+      .fbb * { font-family: 'DM Sans', sans-serif !important; box-sizing: border-box; }
+      .fbb { -webkit-font-smoothing: antialiased; }
+
+      @keyframes fbb-pulse   { 0%,100%{opacity:1} 50%{opacity:.35} }
+      @keyframes fbb-fadein  { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+      @keyframes fbb-shake   { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-4px)} 40%,80%{transform:translateX(4px)} }
+      @keyframes fbb-spin    { from{transform:rotate(0)} to{transform:rotate(360deg)} }
+
+      .fbb-fadein { animation: fbb-fadein 0.28s ease forwards; }
+      .fbb-shake  { animation: fbb-shake  0.35s ease; }
+      .fbb-skel   { animation: fbb-pulse 1.6s ease-in-out infinite; background:#E8EBF2; border-radius:8px; }
+      .fbb-spin   { animation: fbb-spin  1.1s linear infinite; }
+
+      .fbb-input { width:100%; padding:9px 12px; border:1.5px solid #E2E5EA; border-radius:8px; font-size:13px; color:#1A1D23; outline:none; transition:border-color 0.15s; background:#fff; }
+      .fbb-input:focus { border-color:#F97316; box-shadow:0 0 0 3px rgba(249,115,22,0.12); }
+      .fbb-input-error { border-color:#E53E3E !important; }
+
+      .fbb-badge { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:600; letter-spacing:0.03em; }
+      .fbb-card-highlight { background:linear-gradient(135deg,#F97316 0%,#FB923C 100%); color:#fff; }
+      .fbb-card-highlight .fbb-check-icon  { color:#fff; }
+      .fbb-card-highlight .fbb-meta-chip   { background:rgba(255,255,255,0.2); color:#fff; }
+      .fbb-card-highlight .fbb-tagline     { color:rgba(255,255,255,0.85); }
+      .fbb-card-highlight .fbb-ideal-label { color:rgba(255,255,255,0.7); }
+      .fbb-card-highlight .fbb-ideal-text  { color:rgba(255,255,255,0.95); }
+
+      .fbb-pill-btn { transition:all 0.13s; cursor:pointer; }
+      .fbb-pill-btn:hover { filter:brightness(0.94); }
+
+      .fbb-sticky { position:fixed; bottom:0; left:0; right:0; z-index:999; padding:12px 16px; background:#fff; box-shadow:0 -2px 16px rgba(0,0,0,0.1); display:flex; align-items:center; justify-content:center; gap:10px; }
+
+      @media (min-width:768px) { .fbb-sticky { display:none !important; } }
+      @media (max-width:767px) {
+        .fbb-package-grid { grid-template-columns: 1fr !important; }
+        .fbb-rev-table td, .fbb-rev-table th { padding:8px 10px !important; font-size:13px !important; }
+        .fbb-goals-grid { grid-template-columns: 1fr !important; }
+        .fbb-profile-combo { flex-direction: column !important; }
+        .fbb-email-row { flex-direction: column !important; }
+      }
+    `;
+
+    /* ════════════════════════════════════════════
+       HUBSPOT CONFIG — replace with your values
+    ════════════════════════════════════════════ */
+    const HUBSPOT_PORTAL_ID = 'YOUR_PORTAL_ID';
+    const HUBSPOT_FORM_GUID = 'YOUR_FORM_GUID';
+
+    /* ════════════════════════════════════════════
+       CONSTANTS
+    ════════════════════════════════════════════ */
+    const COACHING_FORMATS = [
+      { id: '1on1_online',   label: '1:1 Online' },
+      { id: '1on1_inperson', label: '1:1 In-Person' },
+      { id: 'hybrid',        label: 'Hybrid' },
+      { id: 'group',         label: 'Group' },
+      { id: '1on1_group',    label: '1:1 + Group' },
+    ];
+
+    const NICHES = [
+      'General Fitness',
+      'Weight Loss/Fat Loss',
+      'Strength & Powerlifting',
+      'Bodybuilding/Physique',
+      'Sports Performance',
+      "Women's Fitness/Pre-Post Natal",
+      'Yoga/Mobility',
+      'Functional Fitness/CrossFit',
+      'Senior Fitness',
+      'Youth/Athletic Development',
+      'Rehab/Corrective Exercise',
+      'Other',
+    ];
+
+    const EXPERIENCE_LEVELS = [
+      { id: 'new',         label: '< 1 yr' },
+      { id: 'growing',     label: '1–3 yrs' },
+      { id: 'established', label: '3+ yrs' },
+    ];
+
+    const SERVICES = [
+      { id: 'workout_programs',    label: 'Workout Programs' },
+      { id: 'nutrition_plans',     label: 'Nutrition Plans' },
+      { id: 'video_calls',         label: 'Video Calls' },
+      { id: 'form_check',          label: 'Form Check' },
+      { id: 'weekly_checkins',     label: 'Weekly Check-Ins' },
+      { id: 'messaging',           label: 'Messaging Support' },
+      { id: 'progress_tracking',   label: 'Progress Tracking' },
+      { id: 'habit_coaching',      label: 'Habit Coaching' },
+      { id: 'group_challenges',    label: 'Group Challenges' },
+      { id: 'supplement_guidance', label: 'Supplement Guidance' },
+    ];
+
+    const PROGRAM_DURATIONS = [
+      { id: '4_weeks',         label: '4 wks' },
+      { id: '8_weeks',         label: '8 wks' },
+      { id: '12_weeks',        label: '12 wks' },
+      { id: 'ongoing_monthly', label: 'Monthly' },
+    ];
+
+    const INCOME_GOALS = [
+      { id: '3000',  label: '$3K',   value: 3000 },
+      { id: '5000',  label: '$5K',   value: 5000 },
+      { id: '8000',  label: '$8K',   value: 8000 },
+      { id: '10000', label: '$10K',  value: 10000 },
+      { id: '15000', label: '$15K+', value: 15000 },
+    ];
+
+    const HOURS_OPTIONS = [
+      { id: '10', label: '10 hrs', value: 10 },
+      { id: '20', label: '20 hrs', value: 20 },
+      { id: '30', label: '30 hrs', value: 30 },
+      { id: '40', label: '40 hrs', value: 40 },
+    ];
+
+    const NICHE_NAMES = {
+      'General Fitness':              ['Foundation Plan','Complete Coaching','Elite Coaching'],
+      'Weight Loss/Fat Loss':         ['Shred Starter','Total Transformation','VIP Transformation'],
+      'Strength & Powerlifting':      ['Strength Base','Power Builder','Elite Powerlifting'],
+      'Bodybuilding/Physique':        ['Physique Foundation','Stage Ready Pro','Elite Competition Prep'],
+      'Sports Performance':           ['Performance Base','Athlete Pro','Elite Performance'],
+      "Women's Fitness/Pre-Post Natal": ['Wellness Start','Complete Wellness','Premium Wellness'],
+      'Yoga/Mobility':                ['Flow Foundation','Mind & Body Pro','Elite Mobility'],
+      'Functional Fitness/CrossFit':  ['Functional Base','CrossFit Pro','Elite Athlete'],
+      'Senior Fitness':               ['Active Foundations','Vitality Pro','Elite Active Aging'],
+      'Youth/Athletic Development':   ['Youth Starter','Athlete Development','Elite Youth Program'],
+      'Rehab/Corrective Exercise':    ['Recovery Foundation','Corrective Pro','Elite Rehabilitation'],
+      'Other':                        ['Foundation Plan','Complete Coaching','VIP Coaching'],
+    };
+
+    const NICHE_TAGLINES = {
+      'General Fitness':              ['Build the habit. See the results.','The complete system for lasting fitness.','Total transformation with direct access to me.'],
+      'Weight Loss/Fat Loss':         ['The first step to real, lasting fat loss.','The proven path to the body you want.','Maximum results with maximum accountability.'],
+      'Strength & Powerlifting':      ['Build strength that shows on the platform.','Structured programming that drives real numbers.','Elite-level strength coaching, every rep.'],
+      'Bodybuilding/Physique':        ['Build the foundation your physique needs.','Stage-ready programming and nutrition.','Competition prep with elite-level detail.'],
+      'Sports Performance':           ['Train the way your sport demands.','Performance programming built around your sport.','Everything you need to dominate your season.'],
+      "Women's Fitness/Pre-Post Natal": ['Start your journey with the right support.','Coaching built around your life and your goals.','Dedicated support at every stage of your journey.'],
+      'Yoga/Mobility':                ['Start moving with purpose.','Deepen your practice with expert guidance.','Full-access mobility coaching and accountability.'],
+      'Functional Fitness/CrossFit':  ['Build the base. Move better. Go harder.','Programming that makes you fitter in every direction.','Elite coaching for competitive athletes.'],
+      'Senior Fitness':               ['Move confidently and feel strong every day.','A complete plan built for your body and your goals.','Dedicated coaching and full support to keep you thriving.'],
+      'Youth/Athletic Development':   ['The foundation every young athlete needs.','Multi-sport development that builds winners.','Elite athlete development for serious competitors.'],
+      'Rehab/Corrective Exercise':    ['Start moving pain-free with the right plan.','Corrective coaching that restores function.','Comprehensive rehab and performance coaching.'],
+      'Other':                        ['The start of your transformation.','The complete coaching experience.','Coaching with full access and full commitment.'],
+    };
+
+    const NICHE_IDEAL_FOR = {
+      'General Fitness':              ['People new to fitness who want a clear starting point.','Clients committed to consistent progress with expert guidance.','Goal-driven clients who want direct, personal accountability.'],
+      'Weight Loss/Fat Loss':         ['Clients starting their fat loss journey with a structured plan.','Clients ready to commit fully to hitting their goal weight.',"Clients who've tried before and are ready for a completely different level of support."],
+      'Strength & Powerlifting':      ['Lifters who want structured programming beyond generic plans.','Competitors or serious lifters targeting specific strength goals.','Lifters ready to train like elite athletes with elite-level coaching.'],
+      'Bodybuilding/Physique':        ['Clients building their foundation before stepping on stage.','Competitors preparing for their next show with full programming and nutrition.','Dedicated competitors who want every detail locked in from macros to peak week.'],
+      'Sports Performance':           ['Athletes who want structured off-season or in-season training.','Competitive athletes targeting position-specific performance gains.','Serious athletes who want elite-level, sport-specific coaching.'],
+      "Women's Fitness/Pre-Post Natal": ['Women starting their fitness journey who want a safe, supportive approach.',"Women ready for consistent progress with a coach who understands their needs.",'Women who want dedicated support and expert guidance at every stage.'],
+      'Yoga/Mobility':                ['Beginners building a consistent practice from the ground up.','Practitioners ready to deepen their practice with expert feedback.','Advanced practitioners seeking full-spectrum mobility and coaching support.'],
+      'Functional Fitness/CrossFit':  ['Athletes new to CrossFit who want to build a strong base.','Dedicated athletes optimising performance across multiple disciplines.','Competitive athletes who want elite coaching for elite-level results.'],
+      'Senior Fitness':               ['Active adults who want a safe, structured program for their goals.','Seniors committed to maintaining strength, mobility, and independence.','Clients who want dedicated expert coaching and full-access support.'],
+      'Youth/Athletic Development':   ['Young athletes building fitness foundations and sport skills.','Multi-sport athletes developing the physical tools to excel in their sport.','Elite young athletes targeting serious competitive performance.'],
+      'Rehab/Corrective Exercise':    ['Clients recovering from injury who need a careful, structured return to movement.','Clients with movement limitations wanting to build strength alongside corrective work.','Clients who want comprehensive rehab, performance, and ongoing corrective support.'],
+      'Other':                        ['Clients new to structured coaching who want a starting point.','Committed clients who want a complete coaching experience.','Clients who want full, dedicated access and the highest level of support.'],
+    };
+
+    /* ════════════════════════════════════════════
+       PRICING LOGIC
+    ════════════════════════════════════════════ */
+    function calculatePricing(formData) {
+      const incomeGoal = parseInt(formData.incomeGoal) || 5000;
+      const maxClients = parseInt(formData.maxClients) || 20;
+      const isGroup    = formData.coachingFormat === 'group';
+      const exp        = formData.experienceLevel;
+      const dur        = formData.programDuration;
+
+      const expMult = exp === 'new' ? 0.72 : exp === 'growing' ? 0.87 : 1.0;
+      const durMult = dur === '4_weeks' ? 1.25 : dur === '8_weeks' ? 1.1 : dur === '12_weeks' ? 1.0 : 0.92;
+
+      const premiumClients = Math.max(1, Math.round(maxClients * 0.2));
+      const coreClients    = Math.max(1, Math.round(maxClients * 0.5));
+      const starterClients = Math.max(1, maxClients - premiumClients - coreClients);
+
+      const divisor  = starterClients * 0.6 + coreClients + premiumClients * 2.2;
+      let corePrice  = Math.round((incomeGoal / divisor) * expMult * durMult / 10) * 10;
+      corePrice      = Math.max(149, Math.min(corePrice, 850));
+
+      const starterPrice = Math.round(corePrice * 0.6 / 5) * 5;
+      const premiumPrice = Math.round(corePrice * 2.2 / 10) * 10;
+
+      if (isGroup) {
+        const grpSize = 10;
+        return { starter: Math.max(45, Math.round(starterPrice/grpSize/5)*5), core: Math.max(75, Math.round(corePrice/grpSize/5)*5), premium: Math.max(110, Math.round(premiumPrice/grpSize/5)*5), starterClients, coreClients, premiumClients, isGroup: true, groupSize: grpSize };
+      }
+      return { starter: starterPrice, core: corePrice, premium: premiumPrice, starterClients, coreClients, premiumClients, isGroup: false };
+    }
+
+    /* ════════════════════════════════════════════
+       STRATEGY NOTES
+    ════════════════════════════════════════════ */
+    function buildStrategyNotes(formData, pricing) {
+      const { experienceLevel: exp, niche, coachingFormat: format, services } = formData;
+      const goal           = parseInt(formData.incomeGoal) || 5000;
+      const hours          = parseInt(formData.hoursPerWeek) || 20;
+      const maxClients     = parseInt(formData.maxClients) || 20;
+      const hasNutrition   = services.includes('nutrition_plans');
+      const hasVideoCalls  = services.includes('video_calls');
+      const hasFormCheck   = services.includes('form_check');
+      const hasHabit       = services.includes('habit_coaching');
+      const notes          = [];
+
+      // ── Note 1: Pricing reality for their experience level ──
+      const hoursPerClient    = Math.round((hours / maxClients) * 10) / 10;
+      const impliedHourlyRate = Math.round((pricing.core / (hoursPerClient * 4.3)) / 5) * 5;
+      const raisedCore        = Math.round(pricing.core * 1.25 / 10) * 10;
+      const extraFromRaise    = Math.round((raisedCore - pricing.core) * pricing.coreClients / 100) * 100;
+
+      if (exp === 'new') {
+        notes.push(
+          `Your core package at $${pricing.core}/month is a realistic starting price for building your first client base. ` +
+          `At ${hoursPerClient} hours per client per week, your implied coaching rate is around $${impliedHourlyRate}/hour, which is competitive for early-stage online coaching. ` +
+          `New coaches who undercharge end up with full rosters and no room to raise prices without losing everyone at once. ` +
+          `Avoid that trap by setting a 90-day review date now. ` +
+          `Once you have 5 documented client results, raise the core price to $${raisedCore}. ` +
+          `That one adjustment on your current tier mix adds $${extraFromRaise}/month with no new clients needed.`
+        );
+      } else if (exp === 'growing') {
+        notes.push(
+          `At $${pricing.core}/month for your core package, you are priced competitively for a 1 to 3 year coach in ${niche}. ` +
+          `With ${hoursPerClient} hours per client per week, your implied rate is around $${impliedHourlyRate}/hour. ` +
+          `The realistic next step is $${raisedCore}/month, which adds $${extraFromRaise}/month from the core tier alone with the same number of clients. ` +
+          `Test the higher price on new enquiries first. ` +
+          `Existing clients do not need an immediate increase; raising your acquisition price is enough to shift your average over time.`
+        );
+      } else {
+        const benchmarkLow  = Math.round(pricing.premium * 1.1 / 10) * 10;
+        const benchmarkHigh = Math.round(pricing.premium * 1.45 / 10) * 10;
+        const impliedPremiumRate = Math.round((benchmarkLow / (hoursPerClient * 4.3)) / 5) * 5;
+        notes.push(
+          `With 3 or more years of experience, your premium tier at $${pricing.premium}/month is the package worth the most attention. ` +
+          `Established coaches with strong case studies in ${niche} routinely charge $${benchmarkLow} to $${benchmarkHigh}/month for high-touch 1:1 work. ` +
+          `At $${benchmarkLow} and ${hoursPerClient} hours per client, your effective rate would be around $${impliedPremiumRate}/hour, which is fully defensible at your level. ` +
+          `Test a higher price on the next 3 enquiries before assuming the market will not support it. ` +
+          `Most established coaches undercharge not because clients will not pay more, but because they have not asked.`
+        );
+      }
+
+      // ── Note 2: Capacity and hours reality check ──
+      if (hoursPerClient < 0.75) {
+        notes.push(
+          `At ${hours} hours per week across ${maxClients} clients, you are averaging ${hoursPerClient} hours per client. ` +
+          `That is a low-touch, asynchronous model. It works when delivery is built around pre-written programmes, automated check-ins, and minimal live calls. ` +
+          `If clients at the Starter tier expect active back-and-forth at that rate, you will see churn within 60 days. ` +
+          `Make the async nature explicit in your Starter description so clients self-select correctly, and make sure only clients who want more interaction move up to Core or Premium.`
+        );
+      } else if (hoursPerClient > 2) {
+        const sustainableCap = Math.max(5, Math.round((hours * 0.65) / 2));
+        notes.push(
+          `You are allocating roughly ${hoursPerClient} hours per client per week across ${maxClients} clients and ${hours} hours total. ` +
+          `That is a high-touch model and your pricing accounts for it. ` +
+          `The practical ceiling at this intensity is around ${sustainableCap} active clients before delivery quality or your own energy degrades. ` +
+          `To protect your margin as you scale, cap live touchpoints per client to a defined number per week and handle anything beyond that asynchronously. ` +
+          `Clients notice consistency and quality, not raw contact hours.`
+        );
+      } else {
+        notes.push(
+          `At ${hours} hours per week across ${maxClients} clients, you are running a sustainable ratio of ${hoursPerClient} hours per client. ` +
+          `That gives you enough time to deliver well without burning out. ` +
+          `The risk at this ratio is that it feels manageable now but gets tight fast once you add admin, content, and sales time on top of coaching hours. ` +
+          `Before you hit capacity, build repeatable systems for intake, programming, and check-ins. ` +
+          `Coaches who do this before they are full can scale without sacrificing quality. Coaches who do it after are already in damage control.`
+        );
+      }
+
+      // ── Note 3: Format, niche, and services ──
+      if (format === 'hybrid') {
+        notes.push(
+          `Hybrid coaching commands a real premium because clients place high value on the in-person component. ` +
+          `Keep in-person sessions out of your Starter tier entirely. ` +
+          `The gap between Starter at $${pricing.starter} and Core at $${pricing.core} needs to feel clearly worth the jump, and a face-to-face session is the most tangible justification for that difference. ` +
+          `Clients who are price-sensitive enough to stay on Starter are also telling you they want convenience more than accountability, which makes them a poor fit for in-person work anyway.`
+        );
+      } else if (format === 'group') {
+        const cohortCap = Math.min(15, Math.max(6, Math.round(maxClients / 3)));
+        const cohortRev = pricing.coreClients * pricing.core;
+        notes.push(
+          `Group coaching converts best with fixed cohort sizes and a clear intake window. ` +
+          `Cap each cohort at ${cohortCap} and make that number visible in all your promotion. ` +
+          `Open-enrollment group programmes get treated like subscriptions and generate no urgency. ` +
+          `A hard cap with a defined start date creates real scarcity without any artificial pressure. ` +
+          `At $${pricing.core}/month with ${pricing.coreClients} members, your core cohort alone generates $${cohortRev.toLocaleString()}/month from content you write once and deliver repeatedly.`
+        );
+      } else if (format === '1on1_inperson') {
+        const minsPerClient = Math.round((hours * 60) / maxClients);
+        notes.push(
+          `In-person training has a hard capacity ceiling set by your physical schedule. ` +
+          `At ${hours} hours per week across ${maxClients} clients, you are averaging ${minsPerClient} minutes per client per week before travel and setup time. ` +
+          `Your pricing needs to account for that total time cost, not just the session itself. ` +
+          `If your real cost per client hour including travel is $${Math.round((pricing.core / (minsPerClient / 60 * 4.3)) / 5) * 5}, make sure that rate genuinely reflects your market and experience level before discounting to close a new client.`
+        );
+      } else if (format === '1on1_group') {
+        notes.push(
+          `Running 1:1 and group programmes simultaneously requires clear separation in how you position them. ` +
+          `Your group offering should be a distinct product with its own outcome and client type, not a cheaper version of your 1:1. ` +
+          `Clients who compare the two and choose group because it is cheaper will feel like they are settling, and that framing kills retention. ` +
+          `Position group as the right solution for a specific type of person, not a budget alternative to working with you directly.`
+        );
+      } else if (hasNutrition && (niche === 'Weight Loss/Fat Loss' || niche === 'Bodybuilding/Physique')) {
+        notes.push(
+          `Nutrition is the primary reason clients in ${niche} stay or leave. ` +
+          `Include basic macro targets in your Core package and reserve weekly nutrition adjustments and custom meal planning for Premium only. ` +
+          `When a Core client hits a plateau, the honest answer is usually that they need more detailed nutrition support. ` +
+          `That becomes a natural and credible upgrade conversation rather than a sales push, because you are genuinely offering the right solution for where they are stuck.`
+        );
+      } else if (hasVideoCalls) {
+        notes.push(
+          `Video calls are high-perceived value but easy to over-deliver. ` +
+          `Cap them at one 30-minute session every two weeks for Core and one per week for Premium. ` +
+          `Coaches who offer open-ended or unlimited calls attract clients who want reassurance more than results. ` +
+          `A defined call structure signals that you run a professional, outcome-focused programme. ` +
+          `It also gives you a meaningful and honest upgrade lever: clients who want more direct access have a clear reason to move to Premium.`
+        );
+      } else if (niche === 'Sports Performance') {
+        const yearlyValue = pricing.core * 12;
+        notes.push(
+          `Sports performance clients plan their training around seasons. ` +
+          `Offer an in-season and off-season variant of your Core package at the same price with adjusted training focus and session volume. ` +
+          `Clients stay enrolled year-round because the programme clearly matches where they are in their competitive cycle. ` +
+          `A single client retained at $${pricing.core}/month year-round is worth $${yearlyValue.toLocaleString()} annually. ` +
+          `That is roughly double what a 6-month sign-up generates and requires no additional acquisition cost.`
+        );
+      } else if (niche === 'Senior Fitness' || niche === 'Rehab/Corrective Exercise') {
+        notes.push(
+          `In ${niche}, trust is the primary buying factor. Price is secondary once a client believes you understand their history and take their situation seriously. ` +
+          `Structure your consultations to ask detailed questions about their background before presenting any packages. ` +
+          `Coaches who lead with pricing in this niche lose clients who would have paid significantly more if the consultation had built genuine confidence first. ` +
+          `Your $${pricing.core}/month core price is appropriate for this market. ` +
+          `Your close rate on consultations will depend almost entirely on how well you listen before you pitch.`
+        );
+      } else if (hasFormCheck) {
+        notes.push(
+          `Form check and video review is one of the most effective services for removing objections to online coaching. ` +
+          `The most common hesitation with remote coaching is not knowing whether exercises are being done correctly. ` +
+          `Including form review in Core and Premium addresses that concern directly and removes a barrier that stops many people from signing up. ` +
+          `Share a short example review in your social content. ` +
+          `Seeing a real review in action eliminates the objection for most people before they even speak to you.`
+        );
+      } else if (hasHabit) {
+        notes.push(
+          `Habit coaching is a significant retention driver. ` +
+          `Clients working on behaviours alongside their training typically stay 40 to 60 percent longer than those following a programme alone. ` +
+          `Use this in your positioning: you are the coach for people who have tried before and could not stay consistent. ` +
+          `That framing speaks directly to the majority of your potential market, most of whom have had a previous coach or programme fail not because the training was wrong, but because nothing addressed their actual behaviour patterns.`
+        );
+      } else {
+        notes.push(
+          `For ${niche}, the most effective marketing leads with a single clear outcome rather than a service list. ` +
+          `Pick the specific result your ideal client wants most and make it the central message of every package description. ` +
+          `Service lists tell people what you do. Outcome statements tell them what will change. ` +
+          `At $${pricing.core}/month, clients are not buying check-ins and programmes; they are buying the expectation of a specific result. ` +
+          `Make that result explicit and your conversion rate at this price point will improve noticeably.`
+        );
+      }
+
+      // ── Note 4: Revenue gap or optimisation path ──
+      const totalRev   = pricing.starterClients * pricing.starter + pricing.coreClients * pricing.core + pricing.premiumClients * pricing.premium;
+      const premiumRev = pricing.premiumClients * pricing.premium;
+      const premiumPct = Math.round((premiumRev / totalRev) * 100);
+      const revenueGap = goal - totalRev;
+
+      if (revenueGap > 400) {
+        const extraCoreNeeded    = Math.ceil(revenueGap / pricing.core);
+        const extraPremiumNeeded = Math.ceil(revenueGap / pricing.premium);
+        notes.push(
+          `Your current package mix projects $${totalRev.toLocaleString()}/month, which is $${revenueGap.toLocaleString()} short of your $${goal.toLocaleString()} target. ` +
+          `The two clearest ways to close that gap: add ${extraCoreNeeded} Core client${extraCoreNeeded > 1 ? 's' : ''} at $${pricing.core}/month, or move ${extraPremiumNeeded} existing Core client${extraPremiumNeeded > 1 ? 's' : ''} up to Premium. ` +
+          `Converting existing clients is faster because the trust is already built. ` +
+          `Focus on one lever at a time. Trying to grow all three tiers simultaneously splits your effort and slows progress on all of them.`
+        );
+      } else {
+        notes.push(
+          `Your Premium tier at $${pricing.premium}/month generates ${premiumPct}% of projected revenue from just ${pricing.premiumClients} client${pricing.premiumClients > 1 ? 's' : ''}. ` +
+          `Filling those slots is your highest-value acquisition activity. ` +
+          `Premium clients typically take one or two more conversations to close but stay longer and refer more often than clients at lower tiers. ` +
+          `In consultations, qualify Premium buyers with a direct question about timeline: ask what happens to their goal if they put it off another 3 months. ` +
+          `Clients who answer that honestly and feel the weight of it are the ones who will invest at this level and follow through.`
+        );
+      }
+
+      return notes;
+    }
+
+    /* ════════════════════════════════════════════
+       PACKAGE GENERATION
+    ════════════════════════════════════════════ */
+    function generatePackages(formData, pricing) {
+      const names    = NICHE_NAMES[formData.niche]     || NICHE_NAMES['Other'];
+      const taglines = NICHE_TAGLINES[formData.niche]  || NICHE_TAGLINES['Other'];
+      const idealFor = NICHE_IDEAL_FOR[formData.niche] || NICHE_IDEAL_FOR['Other'];
+      const selIds   = formData.services || [];
+
+      const STARTER_PRIORITY = ['workout_programs','progress_tracking','weekly_checkins'];
+      const CORE_PRIORITY    = ['nutrition_plans','messaging','video_calls','form_check','habit_coaching'];
+      const PREMIUM_EXTRAS   = ['supplement_guidance','group_challenges'];
+
+      const starterBase = SERVICES.filter(s => selIds.includes(s.id) && STARTER_PRIORITY.includes(s.id)).map(s => s.label);
+      const starterRest = SERVICES.filter(s => selIds.includes(s.id) && !STARTER_PRIORITY.includes(s.id)).map(s => s.label);
+      let starterIncludes = [...starterBase, ...starterRest].slice(0, 3);
+      if (starterIncludes.length === 0) starterIncludes = ['Custom Workout Program','Weekly Check-Ins','Progress Tracking'];
+
+      const coreExtra = SERVICES.filter(s => selIds.includes(s.id) && CORE_PRIORITY.includes(s.id)).map(s => s.label);
+      let coreIncludes = [...new Set([...starterIncludes, ...coreExtra])].slice(0, 5);
+      if (coreIncludes.length < 4) { coreIncludes.push('In-App Messaging Support'); coreIncludes.push('Video Coaching Calls'); }
+
+      const allSel      = SERVICES.filter(s => selIds.includes(s.id)).map(s => s.label);
+      const premExtra   = SERVICES.filter(s => selIds.includes(s.id) && PREMIUM_EXTRAS.includes(s.id)).map(s => s.label);
+      const premIncludes = [...new Set([...coreIncludes, ...allSel, ...premExtra, 'Priority Support', 'Monthly Strategy Call'])].slice(0, 7);
+
+      const fmt = formData.coachingFormat;
+      const starterDel = fmt === 'group'  ? 'App-based · Group sessions · Weekly check-ins'               : 'App-based · Weekly check-ins';
+      const coreDel    = fmt === 'hybrid' ? 'App + in-person sessions · Bi-weekly check-ins'               :
+                         fmt === 'group'  ? 'App + group sessions · Bi-weekly coaching calls'              : 'App + video calls · Bi-weekly check-ins';
+      const premDel    = fmt === 'hybrid' ? 'Full-access app + priority in-person sessions + weekly calls'  :
+                         fmt === 'group'  ? 'Full-access app + small-group coaching + weekly calls'        : 'Full-access app + weekly calls + priority support';
+
+      return {
+        packages: [
+          { tier:'starter', name:names[0], price_monthly:pricing.starter, tagline:taglines[0], ideal_for:idealFor[0], includes:starterIncludes, delivery_summary:starterDel },
+          { tier:'core',    name:names[1], price_monthly:pricing.core,    tagline:taglines[1], ideal_for:idealFor[1], includes:coreIncludes,    delivery_summary:coreDel    },
+          { tier:'premium', name:names[2], price_monthly:pricing.premium, tagline:taglines[2], ideal_for:idealFor[2], includes:premIncludes,    delivery_summary:premDel    },
+        ],
+        strategy_notes: buildStrategyNotes(formData, pricing),
+        revenue_projection: {
+          starter_clients: pricing.starterClients, core_clients: pricing.coreClients, premium_clients: pricing.premiumClients,
+          total_monthly_revenue: pricing.starterClients*pricing.starter + pricing.coreClients*pricing.core + pricing.premiumClients*pricing.premium,
+        },
+      };
+    }
+
+    /* ════════════════════════════════════════════
+       HUBSPOT
+    ════════════════════════════════════════════ */
+    async function submitToHubSpot(formData) {
+      if (!HUBSPOT_PORTAL_ID || HUBSPOT_PORTAL_ID === 'YOUR_PORTAL_ID') { console.warn('[FitBudd] HubSpot not configured.'); return; }
+      const nameParts     = formData.name.trim().split(' ');
+      const formatLabel   = COACHING_FORMATS.find(f => f.id === formData.coachingFormat)?.label  || formData.coachingFormat;
+      const expLabel      = EXPERIENCE_LEVELS.find(e => e.id === formData.experienceLevel)?.label || formData.experienceLevel;
+      const durationLabel = PROGRAM_DURATIONS.find(d => d.id === formData.programDuration)?.label || formData.programDuration;
+      const serviceNames  = SERVICES.filter(s => formData.services.includes(s.id)).map(s => s.label).join('; ');
+      const payload = {
+        submittedAt: Date.now(),
+        fields: [
+          { name:'firstname',               value: nameParts[0] || formData.name },
+          { name:'lastname',                value: nameParts.slice(1).join(' ') || '' },
+          { name:'email',                   value: formData.email },
+          { name:'coaching_format',         value: formatLabel },
+          { name:'fitness_niche',           value: formData.niche },
+          { name:'experience_level',        value: expLabel },
+          { name:'services_offered',        value: serviceNames },
+          { name:'program_duration',        value: durationLabel },
+          { name:'monthly_income_goal',     value: `$${formData.incomeGoal}` },
+          { name:'coaching_hours_per_week', value: formData.hoursPerWeek },
+          { name:'max_clients',             value: String(formData.maxClients) },
+        ],
+        context: { pageUri: window.location.href, pageName: 'FitBudd Pricing & Package Builder' },
+      };
+      try {
+        const res = await fetch(`https://api.hsforms.com/submissions/v3/integration/submit/${HUBSPOT_PORTAL_ID}/${HUBSPOT_FORM_GUID}`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+        if (res.ok) console.log('[FitBudd] Lead submitted to HubSpot.');
+        else console.warn('[FitBudd] HubSpot failed:', res.status);
+      } catch(e) { console.warn('[FitBudd] HubSpot error:', e.message); }
+    }
+
+    /* ════════════════════════════════════════════
+       UI COMPONENTS
+    ════════════════════════════════════════════ */
+    function FieldError({ msg }) {
+      if (!msg) return null;
+      return (
+        <div style={{ display:'flex', alignItems:'center', gap:4, marginTop:5 }}>
+          <AlertCircle size={12} color="#E53E3E" />
+          <span style={{ fontSize:11, color:'#E53E3E', fontWeight:500 }}>{msg}</span>
+        </div>
+      );
+    }
+
+    function SectionLabel({ children }) {
+      return <div style={{ fontSize:11, fontWeight:700, color:'#718096', letterSpacing:'0.06em', textTransform:'uppercase', marginBottom:7 }}>{children}</div>;
+    }
+
+    /* Single-select pill row */
+    function PillGroup({ options, value, onChange, error, shaking }) {
+      return (
+        <div>
+          <div style={{ display:'flex', flexWrap:'wrap', gap:6 }} className={shaking ? 'fbb-shake' : ''}>
+            {options.map(opt => {
+              const sel = value === opt.id;
+              return (
+                <button key={opt.id} type="button" onClick={() => onChange(opt.id)} className="fbb-pill-btn"
+                  style={{ padding:'6px 14px', borderRadius:999, border:`1.5px solid ${sel ? '#F97316' : '#E2E5EA'}`, background:sel ? '#FFF7ED' : '#fff', color:sel ? '#F97316' : '#4A5568', fontWeight:sel ? 600 : 400, fontSize:13, minHeight:34, whiteSpace:'nowrap' }}>
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+          {error && <FieldError msg={error} />}
+        </div>
+      );
+    }
+
+    /* Segmented control */
+    function SegmentedControl({ options, value, onChange, error, shaking }) {
+      return (
+        <div>
+          <div style={{ display:'grid', gridTemplateColumns:`repeat(${options.length},1fr)`, border:'1.5px solid #E2E5EA', borderRadius:8, overflow:'hidden', background:'#F7F8FA' }} className={shaking ? 'fbb-shake' : ''}>
+            {options.map((opt, i) => {
+              const sel = value === opt.id;
+              return (
+                <button key={opt.id} type="button" onClick={() => onChange(opt.id)}
+                  style={{ padding:'7px 4px', border:'none', borderLeft:i > 0 ? '1.5px solid #E2E5EA' : 'none', background:sel ? '#F97316' : 'transparent', color:sel ? '#fff' : '#4A5568', fontWeight:sel ? 600 : 400, fontSize:12, cursor:'pointer', transition:'all 0.13s', minHeight:34, lineHeight:1.2 }}>
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+          {error && <FieldError msg={error} />}
+        </div>
+      );
+    }
+
+    /* Multi-select dropdown with checkboxes */
+    function MultiSelectDropdown({ options, values, onChange, error, shaking }) {
+      const [open, setOpen] = useState(false);
+      const ref = useRef(null);
+
+      useEffect(() => {
+        const handler = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+      }, []);
+
+      const toggle = id => onChange(values.includes(id) ? values.filter(v => v !== id) : [...values, id]);
+      const label  = values.length === 0 ? 'Select services…'
+                   : values.length === 1 ? options.find(o => o.id === values[0])?.label
+                   : `${values.length} services selected`;
+
+      return (
+        <div style={{ position:'relative' }} ref={ref} className={shaking ? 'fbb-shake' : ''}>
+          <button type="button" onClick={() => setOpen(o => !o)}
+            style={{ width:'100%', padding:'9px 12px', border:`1.5px solid ${error ? '#E53E3E' : open ? '#F97316' : '#E2E5EA'}`, borderRadius:8, background:'#fff', display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', fontSize:13, color:values.length > 0 ? '#1A1D23' : '#A0AEC0', textAlign:'left', transition:'border-color 0.15s, box-shadow 0.15s', boxShadow:open ? '0 0 0 3px rgba(249,115,22,0.12)' : 'none' }}>
+            <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flex:1, marginRight:8 }}>{label}</span>
+            <div style={{ display:'flex', alignItems:'center', gap:6, flexShrink:0 }}>
+              {values.length > 0 && (
+                <span style={{ background:'#FFF7ED', color:'#F97316', fontSize:10, fontWeight:700, padding:'1px 7px', borderRadius:999 }}>{values.length}</span>
+              )}
+              <ChevronDown size={13} color="#718096" style={{ transform:open ? 'rotate(180deg)' : 'rotate(0)', transition:'transform 0.2s' }} />
+            </div>
+          </button>
+          {open && (
+            <div style={{ position:'absolute', top:'calc(100% + 4px)', left:0, right:0, background:'#fff', border:'1.5px solid #E2E5EA', borderRadius:10, boxShadow:'0 4px 24px rgba(0,0,0,0.1)', zIndex:200, maxHeight:240, overflowY:'auto', padding:'4px 0' }}>
+              {options.map(opt => {
+                const sel = values.includes(opt.id);
+                return (
+                  <label key={opt.id}
+                    style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 12px', cursor:'pointer', background:sel ? '#FFF7ED' : 'transparent' }}>
+                    <input type="checkbox" checked={sel} onChange={() => toggle(opt.id)}
+                      style={{ accentColor:'#F97316', width:14, height:14, cursor:'pointer', flexShrink:0 }} />
+                    <span style={{ fontSize:13, color:sel ? '#1A1D23' : '#4A5568', fontWeight:sel ? 500 : 400, flex:1 }}>{opt.label}</span>
+                    {sel && <Check size={12} color="#F97316" style={{ flexShrink:0 }} />}
+                  </label>
+                );
+              })}
+            </div>
+          )}
+          {error && <FieldError msg={error} />}
+        </div>
+      );
+    }
+
+    /* Number stepper */
+    function NumberStepper({ value, onChange, min = 5, max = 100 }) {
+      return (
+        <div style={{ display:'flex', alignItems:'center', border:'1.5px solid #E2E5EA', borderRadius:8, overflow:'hidden', width:'fit-content' }}>
+          <button type="button" onClick={() => onChange(Math.max(min, value - 1))} style={{ width:36, height:36, background:'#F7F8FA', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'#4A5568' }}><Minus size={14} /></button>
+          <span style={{ padding:'0 14px', fontSize:14, fontWeight:600, color:'#1A1D23', minWidth:44, textAlign:'center', lineHeight:'36px' }}>{value}</span>
+          <button type="button" onClick={() => onChange(Math.min(max, value + 1))} style={{ width:36, height:36, background:'#F7F8FA', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'#4A5568' }}><Plus size={14} /></button>
+        </div>
+      );
+    }
+
+    function SkeletonCard() {
+      return (
+        <div style={{ border:'1.5px solid #E8EBF2', borderRadius:12, padding:'18px 16px', flex:1, minWidth:0 }}>
+          <div className="fbb-skel" style={{ height:13, width:'60%', marginBottom:10 }} />
+          <div className="fbb-skel" style={{ height:26, width:'45%', marginBottom:12 }} />
+          <div className="fbb-skel" style={{ height:11, width:'80%', marginBottom:14 }} />
+          {[1,2,3,4].map(i => (
+            <div key={i} style={{ display:'flex', gap:8, alignItems:'center', marginBottom:7 }}>
+              <div className="fbb-skel" style={{ width:13, height:13, borderRadius:'50%', flexShrink:0 }} />
+              <div className="fbb-skel" style={{ height:11, width:`${48+i*8}%` }} />
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    function LoadingState() {
+      return (
+        <div className="fbb-fadein">
+          <div style={{ textAlign:'center', padding:'24px 0 22px' }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10, marginBottom:6 }}>
+              <div style={{ width:18, height:18, border:'2.5px solid #E2E5EA', borderTopColor:'#F97316', borderRadius:'50%' }} className="fbb-spin" />
+              <span style={{ fontSize:14, fontWeight:500, color:'#1A1D23' }}>Building your pricing strategy…</span>
+            </div>
+            <p style={{ fontSize:12, color:'#718096', margin:0 }}>Tailoring packages to your niche and goals</p>
+          </div>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }} className="fbb-package-grid">
+            <SkeletonCard/><SkeletonCard/><SkeletonCard/>
+          </div>
+        </div>
+      );
+    }
+
+    function PackageCard({ pkg, isHighlighted }) {
+      return (
+        <div className={isHighlighted ? 'fbb-card-highlight' : ''}
+          style={{ borderRadius:12, padding:'18px 16px', flex:1, minWidth:0, border:isHighlighted ? 'none' : '1.5px solid #E2E5EA', background:isHighlighted ? undefined : '#fff', position:'relative', display:'flex', flexDirection:'column' }}>
+          {isHighlighted && (
+            <div style={{ marginBottom:8 }}>
+              <span className="fbb-badge" style={{ background:'#00C48C', color:'#fff' }}>
+                <Star size={10} fill="#fff" /> Most Popular
+              </span>
+            </div>
+          )}
+          <div style={{ fontSize:11, fontWeight:700, letterSpacing:'0.05em', textTransform:'uppercase', color:isHighlighted ? 'rgba(255,255,255,0.7)' : '#718096', marginBottom:2 }}>
+            {pkg.tier === 'starter' ? 'Starter' : pkg.tier === 'core' ? 'Core' : 'Premium'}
+          </div>
+          <div style={{ fontSize:16, fontWeight:700, color:isHighlighted ? '#fff' : '#1A1D23', marginBottom:2 }}>{pkg.name}</div>
+          <div style={{ marginBottom:10 }}>
+            <span style={{ fontSize:26, fontWeight:700, color:isHighlighted ? '#fff' : '#1A1D23' }}>${pkg.price_monthly.toLocaleString()}</span>
+            <span style={{ fontSize:12, color:isHighlighted ? 'rgba(255,255,255,0.7)' : '#718096', marginLeft:3 }}>/mo</span>
+          </div>
+          <p className="fbb-tagline" style={{ fontSize:12, color:isHighlighted ? undefined : '#4A5568', marginBottom:12, lineHeight:1.5, fontStyle:'italic' }}>{pkg.tagline || ''}</p>
+          <div style={{ marginBottom:12 }}>
+            {(pkg.includes || []).map((item, i) => (
+              <div key={i} className="fbb-include-item" style={{ display:'flex', alignItems:'flex-start', gap:7, marginBottom:5 }}>
+                <Check className="fbb-check-icon" size={13} style={{ flexShrink:0, marginTop:2, color:isHighlighted ? '#fff' : '#F97316' }} />
+                <span style={{ fontSize:12, color:isHighlighted ? undefined : '#4A5568', lineHeight:1.4 }}>{item}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop:'auto', paddingTop:10, borderTop:`1px solid ${isHighlighted ? 'rgba(255,255,255,0.2)' : '#EEF1F5'}` }}>
+            <span className="fbb-ideal-label" style={{ fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.05em', color:isHighlighted ? undefined : '#718096' }}>Ideal for</span>
+            <p className="fbb-ideal-text" style={{ fontSize:11, color:isHighlighted ? undefined : '#4A5568', margin:'3px 0 6px', lineHeight:1.4 }}>{pkg.ideal_for || ''}</p>
+            <span className="fbb-meta-chip" style={{ display:'inline-block', fontSize:10, fontWeight:500, padding:'2px 7px', borderRadius:5, background:isHighlighted ? undefined : '#FFF7ED', color:isHighlighted ? undefined : '#F97316' }}>{pkg.delivery_summary || ''}</span>
+          </div>
+        </div>
+      );
+    }
+
+    function RevenueTable({ projection, pricing }) {
+      const { starter_clients:sc, core_clients:cc, premium_clients:pc, total_monthly_revenue:total } = projection;
+      return (
+        <div style={{ overflowX:'auto' }}>
+          <table className="fbb-rev-table" style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
+            <thead>
+              <tr style={{ background:'#F7F8FA' }}>
+                {['Tier','Clients','Price','Revenue'].map(h => (
+                  <th key={h} style={{ padding:'10px 14px', textAlign:h === 'Tier' ? 'left' : 'center', fontWeight:600, fontSize:11, color:'#718096', textTransform:'uppercase', letterSpacing:'0.05em', borderBottom:'1.5px solid #E2E5EA' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {[['Starter',sc,pricing.starter,sc*pricing.starter],['Core',cc,pricing.core,cc*pricing.core],['Premium',pc,pricing.premium,pc*pricing.premium]].map(([name,cl,price,rev]) => (
+                <tr key={name} style={{ borderBottom:'1px solid #EEF1F5' }}>
+                  <td style={{ padding:'10px 14px', fontWeight:500, color:'#1A1D23' }}>{name}</td>
+                  <td style={{ padding:'10px 14px', textAlign:'center', color:'#4A5568' }}>{cl}</td>
+                  <td style={{ padding:'10px 14px', textAlign:'center', color:'#4A5568' }}>${price.toLocaleString()}</td>
+                  <td style={{ padding:'10px 14px', textAlign:'center', fontWeight:500, color:'#1A1D23' }}>${rev.toLocaleString()}</td>
+                </tr>
+              ))}
+              <tr style={{ background:'#F7F8FA' }}>
+                <td style={{ padding:'10px 14px', color:'#1A1D23', fontWeight:700 }}>Total</td>
+                <td style={{ padding:'10px 14px', textAlign:'center', color:'#1A1D23', fontWeight:700 }}>{sc+cc+pc}</td>
+                <td />
+                <td style={{ padding:'10px 14px', textAlign:'center', color:'#F97316', fontWeight:800, fontSize:15 }}>${total.toLocaleString()}/mo</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+
+    const TRIAL_URL = 'https://www.fitbudd.com/your-brand-awaits-your-app-self-sign-up?utm_source=ai_tool&utm_medium=lead_magnet&utm_campaign=pricing_package_builder&utm_content=bottom_cta';
+    const SEE_URL   = 'https://www.fitbudd.com?utm_source=ai_tool&utm_medium=lead_magnet&utm_campaign=pricing_package_builder&utm_content=see_how_it_works';
+
+    function FitBuddCTA({ ctaRef }) {
+      return (
+        <div ref={ctaRef} style={{ background:'linear-gradient(135deg,#FFF7ED 0%,#FFF3E8 100%)', border:'1.5px solid #FED7AA', borderRadius:12, padding:'20px 18px', marginTop:20 }}>
+          <div style={{ display:'flex', alignItems:'flex-start', gap:12 }}>
+            <div style={{ flexShrink:0, width:38, height:38, borderRadius:9, background:'#F97316', display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <TrendingUp size={18} color="#fff" />
+            </div>
+            <div style={{ flex:1 }}>
+              <h3 style={{ margin:'0 0 5px', fontSize:16, fontWeight:700, color:'#1A1D23' }}>Ready to sell these packages?</h3>
+              <p style={{ margin:'0 0 14px', fontSize:13, color:'#4A5568', lineHeight:1.6 }}>
+                Trainers on FitBudd sell packages directly from their own branded app and website, with zero commission on payments. Set up your packages, automate onboarding, and start collecting payments in minutes.
+              </p>
+              <div style={{ display:'flex', flexWrap:'wrap', gap:10, alignItems:'center' }}>
+                <a href={TRIAL_URL} target="_blank" rel="noopener noreferrer"
+                  style={{ display:'inline-flex', alignItems:'center', gap:5, background:'#F97316', color:'#fff', padding:'10px 20px', borderRadius:8, fontWeight:600, fontSize:13, textDecoration:'none' }}>
+                  Start Your Free Trial <ArrowRight size={14} />
+                </a>
+                <a href={SEE_URL} target="_blank" rel="noopener noreferrer"
+                  style={{ fontSize:13, color:'#F97316', fontWeight:500, textDecoration:'none' }}>
+                  See how it works →
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    /* ════════════════════════════════════════════
+       MAIN COMPONENT
+    ════════════════════════════════════════════ */
+    const EMPTY_FORM = { coachingFormat:'', niche:'', experienceLevel:'', services:[], programDuration:'', incomeGoal:'', hoursPerWeek:'', maxClients:20, name:'', email:'' };
+
+    function PricingPackageBuilder() {
+      const [activeTab, setActiveTab] = useState('build');
+      const [formData, setFormData]   = useState(EMPTY_FORM);
+      const [errors, setErrors]       = useState({});
+      const [shakeFields, setShakeFields] = useState([]);
+      const [loading, setLoading]     = useState(false);
+      const [output, setOutput]       = useState(null);
+      const [submitted, setSubmitted] = useState(false);
+      const [stickyVisible, setStickyVisible] = useState(false);
+
+      const ctaRef     = useRef(null);
+      const formTopRef = useRef(null);
+      const styleRef   = useRef(null);
+
+      useEffect(() => {
+        if (styleRef.current) return;
+        const tag = document.createElement('style');
+        tag.textContent = GLOBAL_STYLES;
+        document.head.appendChild(tag);
+        styleRef.current = tag;
+        return () => { if (styleRef.current) { document.head.removeChild(styleRef.current); styleRef.current = null; } };
+      }, []);
+
+      useEffect(() => {
+        const el = ctaRef.current;
+        if (!el || !output) return;
+        const obs = new IntersectionObserver(([e]) => setStickyVisible(!e.isIntersecting), { threshold:0 });
+        obs.observe(el);
+        return () => obs.disconnect();
+      }, [output]);
+
+      const update = (field, value) => {
+        setFormData(p => ({ ...p, [field]: value }));
+        if (errors[field]) setErrors(p => ({ ...p, [field]: null }));
+      };
+
+      const validateAll = () => {
+        const e = {};
+        if (!formData.coachingFormat)                                                                 e.coachingFormat  = 'Select a format';
+        if (!formData.niche)                                                                          e.niche           = 'Select your niche';
+        if (!formData.experienceLevel)                                                                e.experienceLevel = 'Select your level';
+        if (formData.services.length === 0)                                                          e.services        = 'Select at least one service';
+        if (!formData.programDuration)                                                                e.programDuration = 'Select a duration';
+        if (!formData.incomeGoal)                                                                     e.incomeGoal      = 'Select your income goal';
+        if (!formData.hoursPerWeek)                                                                   e.hoursPerWeek    = 'Select your hours';
+        if (!formData.name.trim())                                                                    e.name            = 'Enter your name';
+        if (!formData.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))           e.email           = 'Enter a valid email';
+        return e;
+      };
+
+      const handleSubmit = async e => {
+        e.preventDefault();
+        const errs = validateAll();
+        if (Object.keys(errs).length > 0) {
+          setErrors(errs);
+          setShakeFields(Object.keys(errs));
+          setTimeout(() => setShakeFields([]), 420);
+          formTopRef.current?.scrollIntoView({ behavior:'smooth', block:'start' });
+          return;
+        }
+        setSubmitted(true);
+        setLoading(true);
+        setActiveTab('results');
+        submitToHubSpot(formData).catch(() => {});
+        await new Promise(r => setTimeout(r, 1400));
+        const pricing = calculatePricing(formData);
+        setOutput({ ...generatePackages(formData, pricing), pricing });
+        setLoading(false);
+      };
+
+      const reset = () => {
+        setFormData(EMPTY_FORM);
+        setErrors({});
+        setSubmitted(false);
+        setOutput(null);
+        setLoading(false);
+        setActiveTab('build');
+      };
+
+      /* ── Build Tab ── */
+      const renderBuild = () => (
+        <form onSubmit={handleSubmit} noValidate>
+          <div ref={formTopRef} />
+
+          {/* Section 1: Coaching Profile */}
+          <div style={{ background:'#fff', border:'1.5px solid #E8EBF2', borderRadius:12, padding:'16px 16px 18px', marginBottom:10 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:14 }}>
+              <span style={{ fontSize:15 }}>🎯</span>
+              <span style={{ fontSize:13, fontWeight:700, color:'#1A1D23' }}>Coaching Profile</span>
+            </div>
+
+            {/* Format */}
+            <div style={{ marginBottom:14 }}>
+              <SectionLabel>Format</SectionLabel>
+              <PillGroup options={COACHING_FORMATS} value={formData.coachingFormat} onChange={v => update('coachingFormat', v)} error={errors.coachingFormat} shaking={shakeFields.includes('coachingFormat')} />
+            </div>
+
+            {/* Niche + Experience — shared border, no gap */}
+            <div style={{ display:'flex', border:`1.5px solid ${(errors.niche || errors.experienceLevel) ? '#E53E3E' : '#E2E5EA'}`, borderRadius:8, overflow:'hidden' }} className="fbb-profile-combo">
+              <div style={{ flex:'1 1 0', borderRight:'1.5px solid #E2E5EA', padding:'9px 10px' }}>
+                <div style={{ fontSize:10, fontWeight:700, color:'#718096', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:5 }}>Fitness niche</div>
+                <select value={formData.niche} onChange={e => update('niche', e.target.value)}
+                  style={{ border:'none', width:'100%', fontSize:13, color:formData.niche ? '#1A1D23' : '#A0AEC0', background:'transparent', outline:'none', cursor:'pointer', padding:'0 20px 0 0', appearance:'none', WebkitAppearance:'none', backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%234A5568' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat:'no-repeat', backgroundPosition:'right 2px center' }}>
+                  <option value="">Select niche…</option>
+                  {NICHES.map(n => <option key={n} value={n}>{n}</option>)}
+                </select>
+                {errors.niche && <FieldError msg={errors.niche} />}
+              </div>
+              <div style={{ flex:'0 0 auto', minWidth:164, padding:'9px 10px' }}>
+                <div style={{ fontSize:10, fontWeight:700, color:'#718096', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:5 }}>Experience</div>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', borderRadius:6, overflow:'hidden', background:'#F7F8FA', border:'1px solid #EAEAEA' }}>
+                  {EXPERIENCE_LEVELS.map((opt, i) => {
+                    const sel = formData.experienceLevel === opt.id;
+                    return (
+                      <button key={opt.id} type="button" onClick={() => update('experienceLevel', opt.id)}
+                        style={{ padding:'5px 2px', border:'none', borderLeft:i > 0 ? '1px solid #E2E5EA' : 'none', background:sel ? '#F97316' : 'transparent', color:sel ? '#fff' : '#4A5568', fontWeight:sel ? 600 : 400, fontSize:11, cursor:'pointer', transition:'all 0.13s', minHeight:30, lineHeight:1.2 }}>
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {errors.experienceLevel && <FieldError msg={errors.experienceLevel} />}
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2: Services */}
+          <div style={{ background:'#fff', border:'1.5px solid #E8EBF2', borderRadius:12, padding:'16px 16px 18px', marginBottom:10 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:7 }}>
+                <span style={{ fontSize:15 }}>📋</span>
+                <span style={{ fontSize:13, fontWeight:700, color:'#1A1D23' }}>Services Offered</span>
+              </div>
+              {formData.services.length > 0 && (
+                <span style={{ fontSize:11, fontWeight:600, color:'#F97316', background:'#FFF7ED', padding:'2px 8px', borderRadius:999 }}>
+                  {formData.services.length} selected
+                </span>
+              )}
+            </div>
+            <MultiSelectDropdown options={SERVICES} values={formData.services} onChange={v => update('services', v)} error={errors.services} shaking={shakeFields.includes('services')} />
+          </div>
+
+          {/* Section 3: Goals */}
+          <div style={{ background:'#fff', border:'1.5px solid #E8EBF2', borderRadius:12, padding:'16px 16px 18px', marginBottom:10 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:14 }}>
+              <span style={{ fontSize:15 }}>💰</span>
+              <span style={{ fontSize:13, fontWeight:700, color:'#1A1D23' }}>Program & Revenue Goals</span>
+            </div>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }} className="fbb-goals-grid">
+              <div>
+                <SectionLabel>Program duration</SectionLabel>
+                <SegmentedControl options={PROGRAM_DURATIONS} value={formData.programDuration} onChange={v => update('programDuration', v)} error={errors.programDuration} shaking={shakeFields.includes('programDuration')} />
+              </div>
+              <div>
+                <SectionLabel>Monthly income goal</SectionLabel>
+                <SegmentedControl options={INCOME_GOALS} value={formData.incomeGoal} onChange={v => update('incomeGoal', v)} error={errors.incomeGoal} shaking={shakeFields.includes('incomeGoal')} />
+              </div>
+              <div>
+                <SectionLabel>Hours per week</SectionLabel>
+                <SegmentedControl options={HOURS_OPTIONS} value={formData.hoursPerWeek} onChange={v => update('hoursPerWeek', v)} error={errors.hoursPerWeek} shaking={shakeFields.includes('hoursPerWeek')} />
+              </div>
+              <div>
+                <SectionLabel>Max clients</SectionLabel>
+                <NumberStepper value={formData.maxClients} onChange={v => update('maxClients', v)} min={5} max={100} />
+                <div style={{ fontSize:11, color:'#A0AEC0', marginTop:5 }}>Split across 3 tiers</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Email gate / Submit */}
+          <div style={{ background:'linear-gradient(135deg,#FFF7ED 0%,#FFF3E8 100%)', border:'1.5px solid #FED7AA', borderRadius:12, padding:'18px 16px' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:12 }}>
+              <Zap size={14} color="#F97316" />
+              <span style={{ fontSize:13, fontWeight:700, color:'#1A1D23' }}>Unlock Your Pricing Strategy</span>
+            </div>
+            <div style={{ display:'flex', gap:10, marginBottom:10 }} className="fbb-email-row">
+              <div style={{ flex:1 }}>
+                <input type="text"
+                  className={`fbb-input ${errors.name ? 'fbb-input-error' : ''} ${shakeFields.includes('name') ? 'fbb-shake' : ''}`}
+                  placeholder="Full name"
+                  value={formData.name}
+                  onChange={e => update('name', e.target.value)}
+                  autoComplete="name" />
+                {errors.name && <FieldError msg={errors.name} />}
+              </div>
+              <div style={{ flex:1 }}>
+                <input type="email"
+                  className={`fbb-input ${errors.email ? 'fbb-input-error' : ''} ${shakeFields.includes('email') ? 'fbb-shake' : ''}`}
+                  placeholder="Email address"
+                  value={formData.email}
+                  onChange={e => update('email', e.target.value)}
+                  autoComplete="email" />
+                {errors.email && <FieldError msg={errors.email} />}
+              </div>
+            </div>
+            <button type="submit"
+              style={{ width:'100%', padding:'12px 20px', background:'#F97316', color:'#fff', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer', minHeight:46, boxShadow:'0 3px 12px rgba(249,115,22,0.32)', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+              Get My Pricing Strategy <ArrowRight size={15} />
+            </button>
+          </div>
+        </form>
+      );
+
+      /* ── Results Tab ── */
+      const renderResults = () => {
+        if (loading) return <LoadingState />;
+        if (!output) return (
+          <div style={{ textAlign:'center', padding:'48px 0', color:'#A0AEC0' }}>
+            <Lock size={28} color="#E2E5EA" style={{ marginBottom:10 }} />
+            <p style={{ fontSize:13, fontWeight:500, color:'#718096' }}>Fill in the form and click <strong>Get My Pricing Strategy</strong> to unlock your results.</p>
+          </div>
+        );
+
+        const { packages, strategy_notes, revenue_projection, pricing } = output;
+        const totalClients = pricing.starterClients + pricing.coreClients + pricing.premiumClients;
+        const projected    = revenue_projection.total_monthly_revenue;
+
+        return (
+          <div className="fbb-fadein">
+            <div style={{ marginBottom:16, paddingBottom:14, borderBottom:'1.5px solid #EEF1F5' }}>
+              <div style={{ fontSize:10, fontWeight:700, color:'#00C48C', letterSpacing:'0.06em', textTransform:'uppercase', marginBottom:3 }}>Your custom pricing strategy</div>
+              <h2 style={{ margin:'0 0 3px', fontSize:18, fontWeight:700, color:'#1A1D23' }}>
+                Packages for {formData.name?.split(' ')[0] || 'your'} coaching business
+              </h2>
+              <p style={{ margin:0, fontSize:12, color:'#718096' }}>
+                {formData.niche} · {EXPERIENCE_LEVELS.find(e => e.id === formData.experienceLevel)?.label} · ${parseInt(formData.incomeGoal).toLocaleString()}/mo goal
+              </p>
+            </div>
+
+            {/* Summary strip */}
+            <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:18 }}>
+              {[
+                { icon:<DollarSign size={14} color="#F97316"/>, label:'Price range',    value:`$${pricing.starter.toLocaleString()} – $${pricing.premium.toLocaleString()}/mo` },
+                { icon:<Users size={14} color="#F97316"/>,      label:'Total capacity', value:`${totalClients} clients` },
+                { icon:<TrendingUp size={14} color="#00C48C"/>, label:'Projected /mo',  value:`$${projected.toLocaleString()}` },
+              ].map((item, i) => (
+                <div key={i} style={{ flex:'1 1 140px', background:'#fff', border:'1.5px solid #E2E5EA', borderRadius:9, padding:'9px 12px', display:'flex', alignItems:'center', gap:8 }}>
+                  <div style={{ width:28, height:28, borderRadius:7, background:'#FFF7ED', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{item.icon}</div>
+                  <div>
+                    <div style={{ fontSize:10, color:'#718096', fontWeight:500, textTransform:'uppercase', letterSpacing:'0.04em' }}>{item.label}</div>
+                    <div style={{ fontSize:13, fontWeight:700, color:'#1A1D23', marginTop:1 }}>{item.value}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Package cards */}
+            <div style={{ marginBottom:6 }}>
+              <div style={{ fontSize:10, fontWeight:700, color:'#718096', letterSpacing:'0.06em', textTransform:'uppercase', marginBottom:10 }}>Three-Tier Package Structure</div>
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }} className="fbb-package-grid">
+                {packages.map((pkg, i) => <PackageCard key={pkg.tier} pkg={pkg} isHighlighted={i === 1} />)}
+              </div>
+            </div>
+
+            {/* Strategy notes */}
+            <div style={{ marginTop:20, marginBottom:18 }}>
+              <div style={{ fontSize:10, fontWeight:700, color:'#718096', letterSpacing:'0.06em', textTransform:'uppercase', marginBottom:10 }}>Pricing Strategy Notes</div>
+              <div style={{ background:'#fff', border:'1.5px solid #E2E5EA', borderRadius:12, padding:'14px 16px' }}>
+                {(strategy_notes || []).map((note, i) => (
+                  <div key={i} style={{ display:'flex', gap:10, alignItems:'flex-start', marginBottom:i < strategy_notes.length - 1 ? 12 : 0 }}>
+                    <div style={{ width:20, height:20, borderRadius:'50%', background:'#FFF7ED', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginTop:1 }}>
+                      <span style={{ fontSize:10, fontWeight:700, color:'#F97316' }}>{i + 1}</span>
+                    </div>
+                    <p style={{ margin:0, fontSize:13, color:'#4A5568', lineHeight:1.65 }}>{note}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Revenue table */}
+            <div style={{ marginBottom:20 }}>
+              <div style={{ fontSize:10, fontWeight:700, color:'#718096', letterSpacing:'0.06em', textTransform:'uppercase', marginBottom:10 }}>Revenue Projection</div>
+              <div style={{ background:'#fff', border:'1.5px solid #E2E5EA', borderRadius:12, overflow:'hidden' }}>
+                <RevenueTable projection={revenue_projection} pricing={pricing} />
+              </div>
+            </div>
+
+            <FitBuddCTA ctaRef={ctaRef} />
+
+            <div style={{ marginTop:16, textAlign:'center' }}>
+              <button type="button" onClick={reset}
+                style={{ background:'none', border:'none', color:'#A0AEC0', fontSize:12, cursor:'pointer', display:'inline-flex', alignItems:'center', gap:5 }}>
+                <RefreshCw size={12} /> Start over with different inputs
+              </button>
+            </div>
+          </div>
+        );
+      };
+
+      /* ── Shell ── */
+      return (
+        <div className="fbb" style={{ maxWidth:720, margin:'0 auto', fontFamily:"'DM Sans', sans-serif" }}>
+
+          {/* Header */}
+          <div style={{ marginBottom:14, textAlign:'center' }}>
+            <h1 style={{ fontSize:21, fontWeight:800, color:'#1A1D23', margin:0, letterSpacing:'-0.02em' }}>
+              Pricing & Package Builder
+            </h1>
+          </div>
+
+          {/* Tab bar */}
+          <div style={{ display:'flex', background:'#F7F8FA', border:'1.5px solid #E2E5EA', borderRadius:10, padding:4, marginBottom:12, gap:4 }}>
+            {[
+              { id:'build',   label:'Build Your Packages' },
+              { id:'results', label:'Your Strategy' },
+            ].map(tab => {
+              const active = activeTab === tab.id;
+              const locked = tab.id === 'results' && !submitted;
+              return (
+                <button key={tab.id} type="button"
+                  onClick={() => !locked && setActiveTab(tab.id)}
+                  style={{ flex:1, padding:'8px 10px', borderRadius:7, border:'none', background:active ? '#fff' : 'transparent', color:active ? '#1A1D23' : locked ? '#C3CAD9' : '#718096', fontWeight:active ? 600 : 400, fontSize:13, cursor:locked ? 'default' : 'pointer', transition:'all 0.15s', boxShadow:active ? '0 1px 4px rgba(0,0,0,0.09)' : 'none', display:'flex', alignItems:'center', justifyContent:'center', gap:5 }}>
+                  {tab.label}
+                  {locked && <Lock size={11} color="#C3CAD9" />}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Content card */}
+          <div style={{ background:'#F7F8FA', border:'1px solid #E2E5EA', borderRadius:16, padding:'18px 18px', boxShadow:'0 2px 20px rgba(0,0,0,0.06)' }}>
+            {activeTab === 'build'   && renderBuild()}
+            {activeTab === 'results' && renderResults()}
+          </div>
+
+          {/* Mobile sticky CTA */}
+          {stickyVisible && output && (
+            <div className="fbb-sticky">
+              <span style={{ fontSize:13, fontWeight:500, color:'#1A1D23' }}>Ready to sell these packages?</span>
+              <a href={TRIAL_URL} target="_blank" rel="noopener noreferrer"
+                style={{ display:'inline-flex', alignItems:'center', gap:5, background:'#F97316', color:'#fff', padding:'9px 18px', borderRadius:8, fontWeight:600, fontSize:13, textDecoration:'none', whiteSpace:'nowrap' }}>
+                Start Free Trial <ArrowRight size={14} />
+              </a>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    /* ─── Mount ─── */
+    ReactDOM.createRoot(document.getElementById('root')).render(
+      React.createElement(PricingPackageBuilder)
+    );
+  </script>
+</body>
+</html>
