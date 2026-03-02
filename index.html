@@ -590,19 +590,27 @@
             </div>
           </button>
           {open && (
-            <div style={{ position:'absolute', top:'calc(100% + 4px)', left:0, right:0, background:'#fff', border:'1.5px solid #E2E5EA', borderRadius:10, boxShadow:'0 4px 24px rgba(0,0,0,0.1)', zIndex:200, maxHeight:240, overflowY:'auto', padding:'4px 0' }}>
-              {options.map(opt => {
-                const sel = values.includes(opt.id);
-                return (
-                  <label key={opt.id}
-                    style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 12px', cursor:'pointer', background:sel ? '#FFF7ED' : 'transparent' }}>
-                    <input type="checkbox" checked={sel} onChange={() => toggle(opt.id)}
-                      style={{ accentColor:'#F97316', width:14, height:14, cursor:'pointer', flexShrink:0 }} />
-                    <span style={{ fontSize:13, color:sel ? '#1A1D23' : '#4A5568', fontWeight:sel ? 500 : 400, flex:1 }}>{opt.label}</span>
-                    {sel && <Check size={12} color="#F97316" style={{ flexShrink:0 }} />}
-                  </label>
-                );
-              })}
+            <div style={{ position:'absolute', top:'calc(100% + 4px)', left:0, right:0, background:'#fff', border:'1.5px solid #E2E5EA', borderRadius:10, boxShadow:'0 4px 24px rgba(0,0,0,0.1)', zIndex:200, padding:'4px 0' }}>
+              <div style={{ maxHeight:200, overflowY:'auto' }}>
+                {options.map(opt => {
+                  const sel = values.includes(opt.id);
+                  return (
+                    <label key={opt.id}
+                      style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 12px', cursor:'pointer', background:sel ? '#FFF7ED' : 'transparent' }}>
+                      <input type="checkbox" checked={sel} onChange={() => toggle(opt.id)}
+                        style={{ accentColor:'#F97316', width:14, height:14, cursor:'pointer', flexShrink:0 }} />
+                      <span style={{ fontSize:13, color:sel ? '#1A1D23' : '#4A5568', fontWeight:sel ? 500 : 400, flex:1 }}>{opt.label}</span>
+                      {sel && <Check size={12} color="#F97316" style={{ flexShrink:0 }} />}
+                    </label>
+                  );
+                })}
+              </div>
+              <div style={{ borderTop:'1px solid #EEF0F4', padding:'6px 8px' }}>
+                <button type="button" onClick={() => setOpen(false)}
+                  style={{ width:'100%', padding:'6px', background:'#F97316', color:'#fff', border:'none', borderRadius:6, fontSize:12, fontWeight:600, cursor:'pointer' }}>
+                  Done
+                </button>
+              </div>
             </div>
           )}
           {error && <FieldError msg={error} />}
@@ -612,10 +620,23 @@
 
     /* Number stepper */
     function NumberStepper({ value, onChange, min = 5, max = 100 }) {
+      const [raw, setRaw] = useState(String(value));
+      useEffect(() => { setRaw(String(value)); }, [value]);
+      const commit = () => {
+        const n = parseInt(raw, 10);
+        if (!isNaN(n)) onChange(Math.min(max, Math.max(min, n)));
+        else setRaw(String(value));
+      };
       return (
         <div style={{ display:'flex', alignItems:'center', border:'1.5px solid #E2E5EA', borderRadius:8, overflow:'hidden', width:'fit-content' }}>
           <button type="button" onClick={() => onChange(Math.max(min, value - 1))} style={{ width:36, height:36, background:'#fff', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'#4A5568' }}><Minus size={14} /></button>
-          <span style={{ padding:'0 14px', fontSize:14, fontWeight:600, color:'#1A1D23', minWidth:44, textAlign:'center', lineHeight:'36px' }}>{value}</span>
+          <input
+            type="text" inputMode="numeric" value={raw}
+            onChange={e => setRaw(e.target.value)}
+            onBlur={commit}
+            onKeyDown={e => e.key === 'Enter' && commit()}
+            style={{ width:44, textAlign:'center', fontSize:14, fontWeight:600, color:'#1A1D23', border:'none', outline:'none', background:'transparent', padding:0, height:36 }}
+          />
           <button type="button" onClick={() => onChange(Math.min(max, value + 1))} style={{ width:36, height:36, background:'#fff', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'#4A5568' }}><Plus size={14} /></button>
         </div>
       );
