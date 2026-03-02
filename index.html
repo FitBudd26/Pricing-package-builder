@@ -493,19 +493,14 @@
     ════════════════════════════════════════════ */
     async function submitToHubSpot(formData) {
       if (!HUBSPOT_PORTAL_ID || HUBSPOT_PORTAL_ID === 'YOUR_PORTAL_ID') { console.warn('[FitBudd] HubSpot not configured.'); return; }
-      const payload = {
-        submittedAt: Date.now(),
-        fields: [
-          { name:'firstname', value: formData.name.trim() },
-          { name:'email',     value: formData.email },
-        ],
-        context: { pageUri: window.location.href, pageName: 'FitBudd Pricing & Package Builder' },
-      };
+      const body = new URLSearchParams({
+        firstname: formData.name.trim(),
+        email:     formData.email,
+      });
       try {
-        const res = await fetch(`https://api.hsforms.com/submissions/v3/integration/submit/${HUBSPOT_PORTAL_ID}/${HUBSPOT_FORM_GUID}`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
-        const body = await res.json().catch(() => ({}));
-        if (res.ok) console.log('[FitBudd] HubSpot OK:', body);
-        else console.warn('[FitBudd] HubSpot failed:', res.status, JSON.stringify(body));
+        const res = await fetch(`https://forms.hubspot.com/uploads/form/v2/${HUBSPOT_PORTAL_ID}/${HUBSPOT_FORM_GUID}`, { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body: body.toString() });
+        if (res.ok || res.status === 204) console.log('[FitBudd] HubSpot OK');
+        else console.warn('[FitBudd] HubSpot failed:', res.status, await res.text().catch(() => ''));
       } catch(e) { console.warn('[FitBudd] HubSpot error:', e.message); }
     }
 
