@@ -517,8 +517,9 @@
       };
       try {
         const res = await fetch(`https://api.hsforms.com/submissions/v3/integration/submit/${HUBSPOT_PORTAL_ID}/${HUBSPOT_FORM_GUID}`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
-        if (res.ok) console.log('[FitBudd] Lead submitted to HubSpot.');
-        else console.warn('[FitBudd] HubSpot failed:', res.status);
+        const body = await res.json().catch(() => ({}));
+        if (res.ok) console.log('[FitBudd] HubSpot OK:', body);
+        else console.warn('[FitBudd] HubSpot failed:', res.status, JSON.stringify(body));
       } catch(e) { console.warn('[FitBudd] HubSpot error:', e.message); }
     }
 
