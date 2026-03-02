@@ -15,9 +15,9 @@
       display: flex;
       align-items: flex-start;
       justify-content: center;
-      padding: 28px 16px 80px;
+      padding: 12px 16px 60px;
     }
-    #root { width: 100%; max-width: 720px; }
+    #root { width: 100%; max-width: 580px; }
   </style>
 </head>
 <body>
@@ -863,14 +863,14 @@
           <div ref={formTopRef} />
 
           {/* Section 1: Coaching Profile */}
-          <div style={{ background:'#fff', border:'1.5px solid #E8EBF2', borderRadius:12, padding:'16px 16px 18px', marginBottom:10 }}>
-            <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:14 }}>
+          <div style={{ background:'#fff', border:'1.5px solid #E8EBF2', borderRadius:10, padding:'11px 12px 13px', marginBottom:6 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:10 }}>
               <span style={{ fontSize:15 }}>🎯</span>
               <span style={{ fontSize:13, fontWeight:700, color:'#1A1D23' }}>Coaching Profile</span>
             </div>
 
             {/* Format */}
-            <div style={{ marginBottom:14 }}>
+            <div style={{ marginBottom:10 }}>
               <SectionLabel>Format</SectionLabel>
               <PillGroup options={COACHING_FORMATS} value={formData.coachingFormat} onChange={v => update('coachingFormat', v)} error={errors.coachingFormat} shaking={shakeFields.includes('coachingFormat')} />
             </div>
@@ -905,8 +905,8 @@
           </div>
 
           {/* Section 2: Services */}
-          <div style={{ background:'#fff', border:'1.5px solid #E8EBF2', borderRadius:12, padding:'16px 16px 18px', marginBottom:10 }}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+          <div style={{ background:'#fff', border:'1.5px solid #E8EBF2', borderRadius:10, padding:'11px 12px 13px', marginBottom:6 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
               <div style={{ display:'flex', alignItems:'center', gap:7 }}>
                 <span style={{ fontSize:15 }}>📋</span>
                 <span style={{ fontSize:13, fontWeight:700, color:'#1A1D23' }}>Services Offered</span>
@@ -921,12 +921,12 @@
           </div>
 
           {/* Section 3: Goals */}
-          <div style={{ background:'#fff', border:'1.5px solid #E8EBF2', borderRadius:12, padding:'16px 16px 18px', marginBottom:10 }}>
-            <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:14 }}>
+          <div style={{ background:'#fff', border:'1.5px solid #E8EBF2', borderRadius:10, padding:'11px 12px 13px', marginBottom:6 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:10 }}>
               <span style={{ fontSize:15 }}>💰</span>
               <span style={{ fontSize:13, fontWeight:700, color:'#1A1D23' }}>Program & Revenue Goals</span>
             </div>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }} className="fbb-goals-grid">
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }} className="fbb-goals-grid">
               <div>
                 <SectionLabel>Program duration</SectionLabel>
                 <SegmentedControl options={PROGRAM_DURATIONS} value={formData.programDuration} onChange={v => update('programDuration', v)} error={errors.programDuration} shaking={shakeFields.includes('programDuration')} />
@@ -948,12 +948,12 @@
           </div>
 
           {/* Email gate / Submit */}
-          <div style={{ background:'linear-gradient(135deg,#FFF7ED 0%,#FFF3E8 100%)', border:'1.5px solid #FED7AA', borderRadius:12, padding:'18px 16px' }}>
-            <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:12 }}>
+          <div style={{ background:'linear-gradient(135deg,#FFF7ED 0%,#FFF3E8 100%)', border:'1.5px solid #FED7AA', borderRadius:10, padding:'12px 12px' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:8 }}>
               <Zap size={14} color="#F97316" />
               <span style={{ fontSize:13, fontWeight:700, color:'#1A1D23' }}>Unlock Your Pricing Strategy</span>
             </div>
-            <div style={{ display:'flex', gap:10, marginBottom:10 }} className="fbb-email-row">
+            <div style={{ display:'flex', gap:8, marginBottom:8 }} className="fbb-email-row">
               <div style={{ flex:1 }}>
                 <input type="text"
                   className={`fbb-input ${errors.name ? 'fbb-input-error' : ''} ${shakeFields.includes('name') ? 'fbb-shake' : ''}`}
@@ -974,7 +974,7 @@
               </div>
             </div>
             <button type="submit"
-              style={{ width:'100%', padding:'12px 20px', background:'#F97316', color:'#fff', border:'none', borderRadius:8, fontSize:14, fontWeight:600, cursor:'pointer', minHeight:46, boxShadow:'0 3px 12px rgba(249,115,22,0.32)', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+              style={{ width:'100%', padding:'10px 20px', background:'#F97316', color:'#fff', border:'none', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', minHeight:40, boxShadow:'0 3px 10px rgba(249,115,22,0.28)', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
               Get My Pricing Strategy <ArrowRight size={15} />
             </button>
           </div>
@@ -1069,17 +1069,17 @@
 
       /* ── Shell ── */
       return (
-        <div className="fbb" style={{ maxWidth:720, margin:'0 auto', fontFamily:"'DM Sans', sans-serif" }}>
+        <div className="fbb" style={{ maxWidth:580, margin:'0 auto', fontFamily:"'DM Sans', sans-serif" }}>
 
           {/* Header */}
-          <div style={{ marginBottom:14, textAlign:'center' }}>
-            <h1 style={{ fontSize:21, fontWeight:800, color:'#1A1D23', margin:0, letterSpacing:'-0.02em' }}>
+          <div style={{ marginBottom:8, textAlign:'center' }}>
+            <h1 style={{ fontSize:16, fontWeight:800, color:'#1A1D23', margin:0, letterSpacing:'-0.02em' }}>
               Pricing & Package Builder
             </h1>
           </div>
 
           {/* Tab bar */}
-          <div style={{ display:'flex', background:'#F7F8FA', border:'1.5px solid #E2E5EA', borderRadius:10, padding:4, marginBottom:12, gap:4 }}>
+          <div style={{ display:'flex', background:'#F7F8FA', border:'1.5px solid #E2E5EA', borderRadius:10, padding:3, marginBottom:8, gap:3 }}>
             {[
               { id:'build',   label:'Build Your Packages' },
               { id:'results', label:'Your Strategy' },
@@ -1089,7 +1089,7 @@
               return (
                 <button key={tab.id} type="button"
                   onClick={() => !locked && setActiveTab(tab.id)}
-                  style={{ flex:1, padding:'8px 10px', borderRadius:7, border:'none', background:active ? '#fff' : 'transparent', color:active ? '#1A1D23' : locked ? '#C3CAD9' : '#718096', fontWeight:active ? 600 : 400, fontSize:13, cursor:locked ? 'default' : 'pointer', transition:'all 0.15s', boxShadow:active ? '0 1px 4px rgba(0,0,0,0.09)' : 'none', display:'flex', alignItems:'center', justifyContent:'center', gap:5 }}>
+                  style={{ flex:1, padding:'6px 10px', borderRadius:7, border:'none', background:active ? '#fff' : 'transparent', color:active ? '#1A1D23' : locked ? '#C3CAD9' : '#718096', fontWeight:active ? 600 : 400, fontSize:12, cursor:locked ? 'default' : 'pointer', transition:'all 0.15s', boxShadow:active ? '0 1px 4px rgba(0,0,0,0.09)' : 'none', display:'flex', alignItems:'center', justifyContent:'center', gap:5 }}>
                   {tab.label}
                   {locked && <Lock size={11} color="#C3CAD9" />}
                 </button>
@@ -1098,7 +1098,7 @@
           </div>
 
           {/* Content card */}
-          <div style={{ background:'#F7F8FA', border:'1px solid #E2E5EA', borderRadius:16, padding:'18px 18px', boxShadow:'0 2px 20px rgba(0,0,0,0.06)' }}>
+          <div style={{ background:'#F7F8FA', border:'1px solid #E2E5EA', borderRadius:14, padding:'12px 12px', boxShadow:'0 2px 16px rgba(0,0,0,0.06)' }}>
             {activeTab === 'build'   && renderBuild()}
             {activeTab === 'results' && renderResults()}
           </div>
