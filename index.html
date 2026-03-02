@@ -493,12 +493,10 @@
     ════════════════════════════════════════════ */
     async function submitToHubSpot(formData) {
       if (!HUBSPOT_PORTAL_ID || HUBSPOT_PORTAL_ID === 'YOUR_PORTAL_ID') { console.warn('[FitBudd] HubSpot not configured.'); return; }
-      const nameParts = formData.name.trim().split(' ');
       const payload = {
         submittedAt: Date.now(),
         fields: [
-          { name:'firstname', value: nameParts[0] || formData.name },
-          { name:'lastname',  value: nameParts.slice(1).join(' ') || '' },
+          { name:'firstname', value: formData.name.trim() },
           { name:'email',     value: formData.email },
         ],
         context: { pageUri: window.location.href, pageName: 'FitBudd Pricing & Package Builder' },
